@@ -1,18 +1,11 @@
-Generating figures visualizing the match between sPlot 2.1 and TRY 3.0
-================
-Oliver Purschke
-10 August, 2017
-
 Load required packages
 ======================
 
-``` r
-library(ggplot2)
-library(plyr)
-library(dplyr)
-library(reshape)
-library(foreach)
-```
+    library(ggplot2)
+    library(plyr)
+    library(dplyr)
+    library(reshape)
+    library(foreach)
 
 Loading Data
 ============
@@ -20,23 +13,19 @@ Loading Data
 sPlot species data
 ------------------
 
-Loading a reduced version of 'splot\_20161025\_species', DT2\_small, that just contains the columns 'PlotObservationID', 'species' and 'Relative.cover':
+Loading a reduced version of 'splot\_20161025\_species', DT2\_small,
+that just contains the columns 'PlotObservationID', 'species' and
+'Relative.cover':
 
-``` r
-load("/home/oliver/Dokumente/PhD/PostPhD/IDiv/sDiv/sPlot/Analyses/Data/Species/sPlot/
-sPlot_2017_08_04/splot_20161025_species_small.Rdata")
-gc()
-```
+    load("/home/oliver/Dokumente/PhD/PostPhD/IDiv/sDiv/sPlot/Analyses/Data/Species/sPlot/
+    sPlot_2017_08_04/splot_20161025_species_small.Rdata")
+    gc()
 
-``` r
-dim(DT2_small)
-```
+    dim(DT2_small)
 
     ## [1] 22195966        3
 
-``` r
-head(DT2_small)
-```
+    head(DT2_small)
 
     ##   PlotObservationID                 species Relative.cover
     ## 1                15    Festuca brachyphylla     0.20000000
@@ -49,38 +38,29 @@ head(DT2_small)
 Header data
 -----------
 
-Includes a reduced version of 'splot\_20161124\_header', mainly containing the biome-affiliation and the X-Y-coordinates of each plot:
+Includes a reduced version of 'splot\_20161124\_header', mainly
+containing the biome-affiliation and the X-Y-coordinates of each plot:
 
-``` r
-load("/home/oliver/Dokumente/PhD/PostPhD/IDiv/sDiv/sPlot/Analyses/Data/Species/sPlot/
-sPlot_2017_08_04/splot_20161124_header_small.Rdata")
-gc()
-```
+    load("/home/oliver/Dokumente/PhD/PostPhD/IDiv/sDiv/sPlot/Analyses/Data/Species/sPlot/
+    sPlot_2017_08_04/splot_20161124_header_small.Rdata")
+    gc()
 
-``` r
-coord.biome <- header_small
-```
+    coord.biome <- header_small
 
 Trait data
 ----------
 
 Loading the gapfilled trait data from TRY 3.0:
 
-``` r
-try3gapfilled <- read.csv("/home/oliver/Dokumente/PhD/PostPhD/IDiv/sDiv/sPlot/Analyses/
-Data/Traits/TRY_3.0_gapfilled/Export_sPlot_2016_09_12.csv", stringsAsFactors = F)
-gc()
-```
+    try3gapfilled <- read.csv("/home/oliver/Dokumente/PhD/PostPhD/IDiv/sDiv/sPlot/Analyses/
+    Data/Traits/TRY_3.0_gapfilled/Export_sPlot_2016_09_12.csv", stringsAsFactors = F)
+    gc()
 
-``` r
-dim(try3gapfilled)
-```
+    dim(try3gapfilled)
 
     ## [1] 632938     34
 
-``` r
-names(try3gapfilled)
-```
+    names(try3gapfilled)
 
     ##  [1] "ObservationID"           "X1"                     
     ##  [3] "X4"                      "X11"                    
@@ -103,22 +83,16 @@ names(try3gapfilled)
 Taxonomic backbone
 ------------------
 
-``` r
-load("/home/oliver/Dokumente/PhD/PostPhD/IDiv/sDiv/sPlot/Analyses/Code/
-backbone.splot2.1.try3.is.vascular.Rdata")
-gc()
-```
+    load("/home/oliver/Dokumente/PhD/PostPhD/IDiv/sDiv/sPlot/Analyses/Code/
+    backbone.splot2.1.try3.is.vascular.Rdata")
+    gc()
 
 Matching species with biomes
 ============================
 
-``` r
-DTMatch <- dplyr::left_join(DT2_small, coord.biome[,c(1,5)], by = "PlotObservationID")
-```
+    DTMatch <- dplyr::left_join(DT2_small, coord.biome[,c(1,5)], by = "PlotObservationID")
 
-``` r
-head(DTMatch)
-```
+    head(DTMatch)
 
     ##   PlotObservationID                 species Relative.cover       Biome
     ## 1                15    Festuca brachyphylla     0.20000000 Boreal zone
@@ -128,9 +102,7 @@ head(DTMatch)
     ## 5                16      Potentilla elegans     0.69444444 Boreal zone
     ## 6                16 Saxifraga serpyllifolia     0.02777778 Boreal zone
 
-``` r
-table(DTMatch$Biome)
-```
+    table(DTMatch$Biome)
 
     ## 
     ##                        Alpine                   Boreal zone 
@@ -150,55 +122,45 @@ Summarizing species information
 Calculating species species frequency and average cover
 -------------------------------------------------------
 
-``` r
-spec.group <- group_by(DTMatch, species)
-spec.agg.splot2.vasc <- summarise(spec.group, count.spec = n(),
-                                  Avg_Cover_Perc = mean(Relative.cover))
-```
+    spec.group <- group_by(DTMatch, species)
+    spec.agg.splot2.vasc <- summarise(spec.group, count.spec = n(),
+                                      Avg_Cover_Perc = mean(Relative.cover))
 
 Classify species according to frequency and dominance
 -----------------------------------------------------
 
 Assigning frequency classes:
 
-``` r
-quantile(spec.agg.splot2.vasc$count.spec,(0:4)/4)
-```
+    quantile(spec.agg.splot2.vasc$count.spec,(0:4)/4)
 
     ##     0%    25%    50%    75%   100% 
     ##      1      3     13     55 128942
 
-``` r
-fac1 <- cut(as.numeric(spec.agg.splot2.vasc$count.spec),
-            quantile(spec.agg.splot2.vasc$count.spec,(0:4)/4),
-            labels=c("Low","Medium","High","Highest"))
-```
+    fac1 <- cut(as.numeric(spec.agg.splot2.vasc$count.spec),
+                quantile(spec.agg.splot2.vasc$count.spec,(0:4)/4),
+                labels=c("Low","Medium","High","Highest"))
 
 Assigning dominance classes:
 
-``` r
-quantile(spec.agg.splot2.vasc$Avg_Cover_Perc,(0:4)/4)
-```
+    quantile(spec.agg.splot2.vasc$Avg_Cover_Perc,(0:4)/4)
 
     ##           0%          25%          50%          75%         100% 
     ## 2.099379e-06 9.660214e-03 1.963825e-02 3.998146e-02 1.000000e+00
 
-``` r
-fac2 <- cut(as.numeric(spec.agg.splot2.vasc$Avg_Cover_Perc),
-            quantile(spec.agg.splot2.vasc$Avg_Cover_Perc,(0:4)/4),
-            labels=c("Low","Medium","High","Highest"))
-spec.agg.splot2.vasc$count.fac <- fac1
-spec.agg.splot2.vasc$cover.fac <- fac2
-```
+    fac2 <- cut(as.numeric(spec.agg.splot2.vasc$Avg_Cover_Perc),
+                quantile(spec.agg.splot2.vasc$Avg_Cover_Perc,(0:4)/4),
+                labels=c("Low","Medium","High","Highest"))
+    spec.agg.splot2.vasc$count.fac <- fac1
+    spec.agg.splot2.vasc$cover.fac <- fac2
 
-Because we are interested in percentiles of the whole population of the 50,000+ species, I calculate 5% percentiles based on species ranks instead of their actual values:
+Because we are interested in percentiles of the whole population of the
+50,000+ species, I calculate 5% percentiles based on species ranks
+instead of their actual values:
 
-``` r
-spec.count.rank<-rank(spec.agg.splot2.vasc$count.spec, ties.method = "first")
-fac1 <- cut(spec.count.rank, quantile(spec.count.rank, probs=0:20/20), include.lowest=TRUE,
-            labels=1:20)
-table(fac1)
-```
+    spec.count.rank<-rank(spec.agg.splot2.vasc$count.spec, ties.method = "first")
+    fac1 <- cut(spec.count.rank, quantile(spec.count.rank, probs=0:20/20), include.lowest=TRUE,
+                labels=1:20)
+    table(fac1)
 
     ## fac1
     ##    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15 
@@ -206,12 +168,10 @@ table(fac1)
     ##   16   17   18   19   20 
     ## 2903 2903 2903 2903 2904
 
-``` r
-spec.cover.rank<-rank(spec.agg.splot2.vasc$Avg_Cover_Perc, ties.method = "first")
-fac2 <- cut(spec.cover.rank, quantile(spec.cover.rank, probs=0:20/20), include.lowest=TRUE,
-            labels=1:20)
-table(fac2)
-```
+    spec.cover.rank<-rank(spec.agg.splot2.vasc$Avg_Cover_Perc, ties.method = "first")
+    fac2 <- cut(spec.cover.rank, quantile(spec.cover.rank, probs=0:20/20), include.lowest=TRUE,
+                labels=1:20)
+    table(fac2)
 
     ## fac2
     ##    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15 
@@ -219,24 +179,19 @@ table(fac2)
     ##   16   17   18   19   20 
     ## 2903 2903 2903 2903 2904
 
-``` r
-spec.agg.splot2.vasc$count.fac.20 <- fac1
-spec.agg.splot2.vasc$cover.fac.20 <- fac2
-```
+    spec.agg.splot2.vasc$count.fac.20 <- fac1
+    spec.agg.splot2.vasc$cover.fac.20 <- fac2
 
 TRY species list
 ================
 
-Match names in TRY with the backbone and generate a list of unique, resolved names of orginal (partly unresolved) names in TRY:
+Match names in TRY with the backbone and generate a list of unique,
+resolved names of orginal (partly unresolved) names in TRY:
 
-``` r
-index2 <- match(try3gapfilled$Species, backbone.splot2.1.try3$names.sPlot.TRY)
-try3gapfilled$name.short.correct <- backbone.splot2.1.try3$name.short.correct[index2]
-```
+    index2 <- match(try3gapfilled$Species, backbone.splot2.1.try3$names.sPlot.TRY)
+    try3gapfilled$name.short.correct <- backbone.splot2.1.try3$name.short.correct[index2]
 
-``` r
-str(try3gapfilled)
-```
+    str(try3gapfilled)
 
     ## 'data.frame':    632938 obs. of  34 variables:
     ##  $ ObservationID          : num  15472 15473 15474 15475 15476 ...
@@ -274,84 +229,74 @@ str(try3gapfilled)
     ##  $ ObservationID.1        : int  15472 15473 15474 15475 15476 15477 15478 15479 15480 15481 ...
     ##  $ name.short.correct     : chr  "Acer campestre" "Acer platanoides" "Acer pseudoplatanus" "Aesculus hippocastanum" ...
 
-Generate a list of unique, resolved names of orginal (partly unresolved) names in TRY:
+Generate a list of unique, resolved names of orginal (partly unresolved)
+names in TRY:
 
-``` r
-names.try <- unique(try3gapfilled$name.short.correct)
-length(names.try)
-```
+    names.try <- unique(try3gapfilled$name.short.correct)
+    length(names.try)
 
     ## [1] 52033
 
 There are 52033 unique resolved species in TRY.
 
-``` r
-length(unique(try3gapfilled$Species))
-```
+    length(unique(try3gapfilled$Species))
 
     ## [1] 59319
 
-There are 59319 unique but partly unresolved species in TRY. Means that 12.3% of the gapfilled species in TRY3.0 are Synonyms (or to a small extent species where no suitable name matches were found).
+There are 59319 unique but partly unresolved species in TRY. Means that
+12.3% of the gapfilled species in TRY3.0 are Synonyms (or to a small
+extent species where no suitable name matches were found).
 
 Calculate match between sPlot and TRY
 =====================================
 
-``` r
-biome.group <- group_by(DTMatch, Biome)
+    biome.group <- group_by(DTMatch, Biome)
 
-biome.trait.match.freq.dom <- foreach(i = 6:7, .combine = rbind) %:% 
-    foreach(j = 2:20, .combine = cbind) %do% {                   
-        index3 <- which(spec.agg.splot2.vasc[,i] == j)
-        names.freq.dom <- unique(spec.agg.splot2.vasc$species[index3])   
-        biome.group.small <- biome.group[which(biome.group$species %in% names.freq.dom), ]    
-        x <- dplyr::summarise(biome.group.small,
-                              match.splot.try =
-                                  100*(length(unique(species)
-                                              [which(unique(species) %in%
-                                                     names.try)])/length(unique(species))))[,2]
-        x
-    }
+    biome.trait.match.freq.dom <- foreach(i = 6:7, .combine = rbind) %:% 
+        foreach(j = 2:20, .combine = cbind) %do% {                   
+            index3 <- which(spec.agg.splot2.vasc[,i] == j)
+            names.freq.dom <- unique(spec.agg.splot2.vasc$species[index3])   
+            biome.group.small <- biome.group[which(biome.group$species %in% names.freq.dom), ]    
+            x <- dplyr::summarise(biome.group.small,
+                                  match.splot.try =
+                                      100*(length(unique(species)
+                                                  [which(unique(species) %in%
+                                                         names.try)])/length(unique(species))))[,2]
+            x
+        }
 
-gc()
-```
+    gc()
 
 Assign names to match stats
 ---------------------------
 
-Take the nineteen 5% percentiles as colnames. Skip the lowest percentile as it could not be calculated for the some of the biomes.
+Take the nineteen 5% percentiles as colnames. Skip the lowest percentile
+as it could not be calculated for the some of the biomes.
 
-``` r
-a <- seq(6, 100, 5)
-b <- seq(10, 100, 5)
-nam <- paste(a,b, sep = "-")
-colnames(biome.trait.match.freq.dom) <- nam
-```
+    a <- seq(6, 100, 5)
+    b <- seq(10, 100, 5)
+    nam <- paste(a,b, sep = "-")
+    colnames(biome.trait.match.freq.dom) <- nam
 
 Use the Biom in 'Schulz\_Bio' as first column.
 
-``` r
-biome.trait.match.agg <-
-    dplyr::summarise(biome.group,
-                     match.splot.try =
-                         100*(length(unique(species)[which(unique(species) %in%
-                                                           names.try)])/length(unique(species))))
+    biome.trait.match.agg <-
+        dplyr::summarise(biome.group,
+                         match.splot.try =
+                             100*(length(unique(species)[which(unique(species) %in%
+                                                               names.try)])/length(unique(species))))
 
-biome.trait.match.freq.dom2 <- cbind(rep(biome.trait.match.agg$Biome, 2),
-                                     biome.trait.match.freq.dom)
-colnames(biome.trait.match.freq.dom2)[1] <- "Schulz_Bio"
-```
+    biome.trait.match.freq.dom2 <- cbind(rep(biome.trait.match.agg$Biome, 2),
+                                         biome.trait.match.freq.dom)
+    colnames(biome.trait.match.freq.dom2)[1] <- "Schulz_Bio"
 
-``` r
-biome.trait.match.3 <- biome.trait.match.freq.dom2 %>% 
-    dplyr::filter(!is.na(Schulz_Bio)) %>% 
-    dplyr::select(1:20) %>%
-    reshape::melt("Schulz_Bio") %>%
-    dplyr::mutate(freq.dom = rep(c("Frequency", "Dominance"), 19, each = 10))
-```
+    biome.trait.match.3 <- biome.trait.match.freq.dom2 %>% 
+        dplyr::filter(!is.na(Schulz_Bio)) %>% 
+        dplyr::select(1:20) %>%
+        reshape::melt("Schulz_Bio") %>%
+        dplyr::mutate(freq.dom = rep(c("Frequency", "Dominance"), 19, each = 10))
 
-``` r
-head(biome.trait.match.3)
-```
+    head(biome.trait.match.3)
 
     ##                      Schulz_Bio variable     value  freq.dom
     ## 1                        Alpine     6-10  8.333333 Frequency
@@ -361,9 +306,7 @@ head(biome.trait.match.3)
     ## 5       Polar and subpolar zone     6-10  0.000000 Frequency
     ## 6 Subtrop. with year-round rain     6-10 32.063492 Frequency
 
-``` r
-tail(biome.trait.match.3)
-```
+    tail(biome.trait.match.3)
 
     ##                        Schulz_Bio variable    value  freq.dom
     ## 375       Polar and subpolar zone   96-100 76.92308 Dominance
@@ -375,47 +318,41 @@ tail(biome.trait.match.3)
 
 Bring 'biomes names' and 'freq.dom' in a sensible order:
 
-``` r
-biome.trait.match.3$Schulz_Bio <-
-    factor(biome.trait.match.3$Schulz_Bio, levels=c("Tropics with year-round rain",
-                                                  "Tropics with summer rain",
-                                                  "Dry tropics and subtropics",
-                                                  "Subtropics with winter rain",
-                                                  "Subtrop. with year-round rain",
-                                                  "Temperate midlatitudes",
-                                                  "Dry midlatitudes",
-                                                  "Boreal zone",
-                                                  "Polar and subpolar zone",
-                                                  "Alpine"))
+    biome.trait.match.3$Schulz_Bio <-
+        factor(biome.trait.match.3$Schulz_Bio, levels=c("Tropics with year-round rain",
+                                                      "Tropics with summer rain",
+                                                      "Dry tropics and subtropics",
+                                                      "Subtropics with winter rain",
+                                                      "Subtrop. with year-round rain",
+                                                      "Temperate midlatitudes",
+                                                      "Dry midlatitudes",
+                                                      "Boreal zone",
+                                                      "Polar and subpolar zone",
+                                                      "Alpine"))
 
-biome.trait.match.3$freq.dom <- factor(biome.trait.match.3$freq.dom,
-                                       levels=c("Frequency", "Dominance"))
-```
+    biome.trait.match.3$freq.dom <- factor(biome.trait.match.3$freq.dom,
+                                           levels=c("Frequency", "Dominance"))
 
 Generate the Figure
 ===================
 
-``` r
-ggplot(biome.trait.match.3, aes(variable, value, fill=variable)) + 
-  geom_bar(stat="identity", position="dodge")+
-    facet_grid(freq.dom ~ Schulz_Bio) +
-    theme(axis.text.x=element_blank(),
-          axis.ticks.x=element_blank(), 
-          axis.title.x=element_blank()) +
-    xlab("Biomes") +
-    ylab("Percentage match")+  
-    guides(fill=guide_legend(title="Percentiles"))  +
-    ggtitle("Match sPlot 2.1 - TRY 3.0 (gapfilled), across frequency and coverage
-classes (5% percentiles) for each biome")
-```
+    ggplot(biome.trait.match.3, aes(variable, value, fill=variable)) + 
+      geom_bar(stat="identity", position="dodge")+
+        facet_grid(freq.dom ~ Schulz_Bio) +
+        theme(axis.text.x=element_blank(),
+              axis.ticks.x=element_blank(), 
+              axis.title.x=element_blank()) +
+        xlab("Biomes") +
+        ylab("Percentage match")+  
+        guides(fill=guide_legend(title="Percentiles"))  +
+        ggtitle("Match sPlot 2.1 - TRY 3.0 (gapfilled), across frequency and coverage
+    classes (5% percentiles) for each biome")
 
-![](MatchPlots_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-26-1.png)
+![](MatchPlots_files/figure-markdown_strict/unnamed-chunk-26-1.png)
 
 Save the figure
 ---------------
 
-``` r
-ggsave("Match TRY3-sPlot2.1.biome_Freq_Dom_5_perc.png", plot = last_plot(), device = "png",
-       path = NULL, scale = 1, width = 10, height = 5, units = c("mm"), dpi = 300,
-       limitsize = TRUE)
-```
+    ggsave("Match TRY3-sPlot2.1.biome_Freq_Dom_5_perc.png", plot = last_plot(), device = "png",
+           path = NULL, scale = 1, width = 10, height = 5, units = c("mm"), dpi = 300,
+           limitsize = TRUE)
