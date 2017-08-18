@@ -348,7 +348,7 @@ Generate the Figure
         ggtitle("Match sPlot 2.1 - TRY 3.0 (gapfilled), across frequency and coverage
     classes (5% percentiles) for each biome")
 
-![](MatchPlots_files/figure-markdown_strict/unnamed-chunk-26-1.png)
+![](MatchPlots_files/figure-markdown_strict/unnamed-chunk-27-1.png)
 
 Save the figure
 ---------------
